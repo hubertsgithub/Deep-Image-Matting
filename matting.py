@@ -24,24 +24,24 @@ hard_samples = [
 ]
 
 def unpool(pool, ind, ksize=[1, 2, 2, 1], scope='unpool'):
-    
-	with tf.variable_scope(scope):
-		input_shape = pool.get_shape().as_list()
-		output_shape = (input_shape[0], input_shape[1] * ksize[1], input_shape[2] * ksize[2], input_shape[3])
 
-		flat_input_size = np.prod(input_shape)
-		flat_output_shape = [output_shape[0], output_shape[1] * output_shape[2] * output_shape[3]]
+    with tf.variable_scope(scope):
+        input_shape = pool.get_shape().as_list()
+        output_shape = (input_shape[0], input_shape[1] * ksize[1], input_shape[2] * ksize[2], input_shape[3])
 
-		pool_ = tf.reshape(pool, [flat_input_size])
-		batch_range = tf.reshape(tf.range(output_shape[0], dtype=ind.dtype), shape=[input_shape[0], 1, 1, 1])
-		b = tf.ones_like(ind) * batch_range
-		b = tf.reshape(b, [flat_input_size, 1])
-		ind_ = tf.reshape(ind, [flat_input_size, 1])
-		ind_ = tf.concat([b, ind_], 1)
+        flat_input_size = np.prod(input_shape)
+        flat_output_shape = [output_shape[0], output_shape[1] * output_shape[2] * output_shape[3]]
 
-		ret = tf.scatter_nd(ind_, pool_, shape=flat_output_shape)
-		ret = tf.reshape(ret, output_shape)
-		return ret
+        pool_ = tf.reshape(pool, [flat_input_size])
+        batch_range = tf.reshape(tf.range(output_shape[0], dtype=ind.dtype), shape=[input_shape[0], 1, 1, 1])
+        b = tf.ones_like(ind) * batch_range
+        b = tf.reshape(b, [flat_input_size, 1])
+        ind_ = tf.reshape(ind, [flat_input_size, 1])
+        ind_ = tf.concat([b, ind_], 1)
+
+        ret = tf.scatter_nd(ind_, pool_, shape=flat_output_shape)
+        ret = tf.reshape(ret, output_shape)
+        return ret
 
 
 def UR_center(trimap):
@@ -55,7 +55,7 @@ def load_path(alpha,eps,BG,hard_mode = False):
     common_paths = []
     if hard_mode:
         for folder in folders:
-            if int(folder) in hard_samples: 
+            if int(folder) in hard_samples:
                 images = os.listdir(os.path.join(alpha,folder))
                 common_paths.extend([os.path.join(folder,image) for image in images])
     else:
@@ -70,30 +70,30 @@ def load_path(alpha,eps,BG,hard_mode = False):
     return np.array(alphas_abspath),np.array(epses_abspath),np.array(BGs_abspath)
 
 def load_data(batch_alpha_paths,batch_eps_paths,batch_BG_paths):
-	
-	batch_size = batch_alpha_paths.shape[0]
-	train_batch = []
-	images_without_mean_reduction = []
-	for i in range(batch_size):
-			
-		alpha = misc.imread(batch_alpha_paths[i],'L').astype(np.float32)
 
-		eps = misc.imread(batch_eps_paths[i]).astype(np.float32)
+    batch_size = batch_alpha_paths.shape[0]
+    train_batch = []
+    images_without_mean_reduction = []
+    for i in range(batch_size):
 
-		BG = misc.imread(batch_BG_paths[i]).astype(np.float32)
-		
-		batch_i,raw_RGB = preprocessing_single(alpha, BG, eps,batch_alpha_paths[i])	
-		train_batch.append(batch_i)
-		images_without_mean_reduction.append(raw_RGB)
-	train_batch = np.stack(train_batch)
-	return train_batch[:,:,:,:3],np.expand_dims(train_batch[:,:,:,3],3),np.expand_dims(train_batch[:,:,:,4],3),train_batch[:,:,:,5:8],train_batch[:,:,:,8:],images_without_mean_reduction
+        alpha = misc.imread(batch_alpha_paths[i],'L').astype(np.float32)
+
+        eps = misc.imread(batch_eps_paths[i]).astype(np.float32)
+
+        BG = misc.imread(batch_BG_paths[i]).astype(np.float32)
+
+        batch_i,raw_RGB = preprocessing_single(alpha, BG, eps,batch_alpha_paths[i])
+        train_batch.append(batch_i)
+        images_without_mean_reduction.append(raw_RGB)
+    train_batch = np.stack(train_batch)
+    return train_batch[:,:,:,:3],np.expand_dims(train_batch[:,:,:,3],3),np.expand_dims(train_batch[:,:,:,4],3),train_batch[:,:,:,5:8],train_batch[:,:,:,8:],images_without_mean_reduction
 
 def generate_trimap(trimap,alpha):
 
-	k_size = random.choice(trimap_kernel)
-	trimap[np.where((ndimage.grey_dilation(alpha[:,:,0],size=(k_size,k_size)) - ndimage.grey_erosion(alpha[:,:,0],size=(k_size,k_size)))!=0)] = 128
-	#trimap[np.where((ndimage.grey_dilation(alpha[:,:,0],size=(k_size,k_size)) - alpha[:,:,0]!=0))] = 128
-	return trimap
+    k_size = random.choice(trimap_kernel)
+    trimap[np.where((ndimage.grey_dilation(alpha[:,:,0],size=(k_size,k_size)) - ndimage.grey_erosion(alpha[:,:,0],size=(k_size,k_size)))!=0)] = 128
+    #trimap[np.where((ndimage.grey_dilation(alpha[:,:,0],size=(k_size,k_size)) - alpha[:,:,0]!=0))] = 128
+    return trimap
 
 def preprocessing_single(alpha, BG, eps,name,image_size=320):
 
@@ -103,7 +103,7 @@ def preprocessing_single(alpha, BG, eps,name,image_size=320):
 
     train_data = np.zeros([image_size,image_size,8])
     crop_size = random.choice([320,480,620])
-#    crop_size = 320   
+#    crop_size = 320
     flip = random.choice([0,1])
     i_UR_center = UR_center(trimap)
     #i_UR_center = [int(alpha.shape[0]/2),int(alpha.shape[1]/2)]
@@ -133,9 +133,9 @@ def preprocessing_single(alpha, BG, eps,name,image_size=320):
         tmp1[:,:,1] = misc.imresize(tmp[:,:,1].astype(np.uint8),[image_size,image_size]).astype(np.float32) / 255.0
         tmp1[:,:,2:5] = misc.imresize(tmp[:,:,2:5].astype(np.uint8),[image_size,image_size,3]).astype(np.float32)
         tmp1[:,:,5:] = misc.imresize(tmp[:,:,5:].astype(np.uint8),[image_size,image_size,3]).astype(np.float32)
-        tmp1[:,:,5:] = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:]  # here replace eps with FG        
+        tmp1[:,:,5:] = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:]  # here replace eps with FG
         raw_RGB = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:] + np.expand_dims((1. - tmp1[:,:,1]),2) * tmp1[:,:,2:5]
-        reduced_RGB = raw_RGB - g_mean      
+        reduced_RGB = raw_RGB - g_mean
         tmp1 = np.concatenate([reduced_RGB,tmp1],2)
         train_data = tmp1
 
@@ -155,9 +155,9 @@ def preprocessing_single(alpha, BG, eps,name,image_size=320):
         tmp1[:,:,1] = misc.imresize(tmp[:,:,1].astype(np.uint8),[image_size,image_size]).astype(np.float32) / 255.0
         tmp1[:,:,2:5] = misc.imresize(tmp[:,:,2:5].astype(np.uint8),[image_size,image_size,3]).astype(np.float32)
         tmp1[:,:,5:] = misc.imresize(tmp[:,:,5:].astype(np.uint8),[image_size,image_size,3]).astype(np.float32)
-        tmp1[:,:,5:] = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:]  # here replace eps with FG        
+        tmp1[:,:,5:] = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:]  # here replace eps with FG
         raw_RGB = np.expand_dims(tmp1[:,:,1],2)  * tmp1[:,:,5:] + np.expand_dims((1. - tmp1[:,:,1]),2) * tmp1[:,:,2:5]
-        reduced_RGB = raw_RGB - g_mean      
+        reduced_RGB = raw_RGB - g_mean
         tmp1 = np.concatenate([reduced_RGB,tmp1],2)
         train_data = tmp1
     train_data = train_data.astype(np.float32)
@@ -165,45 +165,45 @@ def preprocessing_single(alpha, BG, eps,name,image_size=320):
     return train_data,raw_RGB
 
 def load_alphamatting_data(test_alpha):
-	rgb_path = os.path.join(test_alpha,'rgb')
-	trimap_path = os.path.join(test_alpha,'trimap')
-	alpha_path = os.path.join(test_alpha,'alpha')	
-	images = os.listdir(trimap_path)
-	test_num = len(images)
-	all_shape = []
-	rgb_batch = []
-	tri_batch = []
-	alp_batch = []
-	for i in range(test_num):
-		rgb = misc.imread(os.path.join(rgb_path,images[i]))
-		trimap = misc.imread(os.path.join(trimap_path,images[i]),'L')
-		alpha = misc.imread(os.path.join(alpha_path,images[i]),'L')/255.0
-		all_shape.append(trimap.shape)
-		rgb_batch.append(misc.imresize(rgb,[320,320,3])-g_mean)
-		trimap = misc.imresize(trimap,[320,320],interp = 'nearest').astype(np.float32)
-		tri_batch.append(np.expand_dims(trimap,2))
-		alp_batch.append(alpha)
-	return np.array(rgb_batch),np.array(tri_batch),np.array(alp_batch),all_shape,images
+    rgb_path = os.path.join(test_alpha,'rgb')
+    trimap_path = os.path.join(test_alpha,'trimap')
+    alpha_path = os.path.join(test_alpha,'alpha')
+    images = os.listdir(trimap_path)
+    test_num = len(images)
+    all_shape = []
+    rgb_batch = []
+    tri_batch = []
+    alp_batch = []
+    for i in range(test_num):
+        rgb = misc.imread(os.path.join(rgb_path,images[i]))
+        trimap = misc.imread(os.path.join(trimap_path,images[i]),'L')
+        alpha = misc.imread(os.path.join(alpha_path,images[i]),'L')/255.0
+        all_shape.append(trimap.shape)
+        rgb_batch.append(misc.imresize(rgb,[320,320,3])-g_mean)
+        trimap = misc.imresize(trimap,[320,320],interp = 'nearest').astype(np.float32)
+        tri_batch.append(np.expand_dims(trimap,2))
+        alp_batch.append(alpha)
+    return np.array(rgb_batch),np.array(tri_batch),np.array(alp_batch),all_shape,images
 
 def load_validation_data(vali_root):
-	alpha_dir = os.path.join(vali_root,'alpha')
-	RGB_dir = os.path.join(vali_root,'RGB')
-	images = os.listdir(alpha_dir)
-	test_num = len(images)
-	
-	all_shape = []
-	rgb_batch = []
-	tri_batch = []
-	alp_batch = []
+    alpha_dir = os.path.join(vali_root,'alpha')
+    RGB_dir = os.path.join(vali_root,'RGB')
+    images = os.listdir(alpha_dir)
+    test_num = len(images)
 
-	for i in range(test_num):
-		rgb = misc.imread(os.path.join(RGB_dir,images[i]))
-		alpha = misc.imread(os.path.join(alpha_dir,images[i]),'L') 
-		trimap = generate_trimap(np.expand_dims(np.copy(alpha),2),np.expand_dims(alpha,2))[:,:,0]
-		alpha = alpha / 255.0
-		all_shape.append(trimap.shape)
-		rgb_batch.append(misc.imresize(rgb,[320,320,3])-g_mean)
-		trimap = misc.imresize(trimap,[320,320],interp = 'nearest').astype(np.float32)
-		tri_batch.append(np.expand_dims(trimap,2))
-		alp_batch.append(alpha)
-	return np.array(rgb_batch),np.array(tri_batch),np.array(alp_batch),all_shape,images
+    all_shape = []
+    rgb_batch = []
+    tri_batch = []
+    alp_batch = []
+
+    for i in range(test_num):
+        rgb = misc.imread(os.path.join(RGB_dir,images[i]))
+        alpha = misc.imread(os.path.join(alpha_dir,images[i]),'L')
+        trimap = generate_trimap(np.expand_dims(np.copy(alpha),2),np.expand_dims(alpha,2))[:,:,0]
+        alpha = alpha / 255.0
+        all_shape.append(trimap.shape)
+        rgb_batch.append(misc.imresize(rgb,[320,320,3])-g_mean)
+        trimap = misc.imresize(trimap,[320,320],interp = 'nearest').astype(np.float32)
+        tri_batch.append(np.expand_dims(trimap,2))
+        alp_batch.append(alpha)
+    return np.array(rgb_batch),np.array(tri_batch),np.array(alp_batch),all_shape,images
